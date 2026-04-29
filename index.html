@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meetly Game Night</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --gold: #FFD700;
+    --gold-dark: #C8A800;
+    --bg: #0a0a1a;
+    --bg2: #12122a;
+    --card: #1a1a35;
+    --border: rgba(255,215,0,0.2);
+    --text: #ffffff;
+    --muted: rgba(255,255,255,0.5);
+    --green: #00e676;
+    --red: #ff1744;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── SCREENS ─── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ─── LOBBY ─── */
+  #lobby {
+    align-items: center;
+    justify-content: flex-start;
+    padding: 30px 20px 40px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,215,0,0.08) 0%, transparent 60%), var(--bg);
+  }
+
+  .lobby-header { text-align: center; margin-bottom: 32px; }
+  .lobby-eyebrow {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .lobby-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3.5rem, 8vw, 6rem);
+    letter-spacing: 0.05em;
+    color: var(--gold);
+    text-shadow: 0 0 60px rgba(255,215,0,0.3);
+    line-height: 1;
+  }
+  .lobby-sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.1em;
+  }
+
+  .lobby-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 960px;
+  }
+
+  .lobby-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .lobby-panel h3 {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* Teams panel */
+  .teams-grid { display: flex; flex-direction: column; gap: 8px; }
+  .team-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .team-color-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .team-row input {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .team-row input:focus { border-color: var(--gold); }
+  .team-row .del-team {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+  .team-row .del-team:hover { color: var(--red); }
+
+  .add-team-btn {
+    margin-top: 8px;
+    background: none;
+    border: 1px dashed rgba(255,215,0,0.3);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    padding: 8px;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .add-team-btn:hover { background: rgba(255,215,0,0.05); }
+
+  /* Settings */
+  .settings-grid { display: flex; flex-direction: column; gap: 12px; }
+  .setting-row { display: flex; flex-direction: column; gap: 6px; }
+  .setting-row label { font-size: 0.8rem; color: var(--muted); }
+  .setting-row select, .setting-row input[type=number] {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .setting-row select:focus, .setting-row input:focus { border-color: var(--gold); }
+  .setting-row select option { background: #1a1a35; }
+
+  .lobby-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 960px;
+  }
+
+  .btn-gold {
+    flex: 1;
+    background: var(--gold);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(255,215,0,0.3);
+  }
+  .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,215,0,0.4); }
+  .btn-ghost {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+
+  /* ─── GAME BOARD ─── */
+  #game {
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .game-header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .game-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+  }
+  .game-logo span { font-size: 0.75rem; font-family: 'DM Sans', sans-serif; color: var(--muted); display: block; letter-spacing: 0.1em; }
+
+  .game-main { display: flex; flex: 1; overflow: hidden; }
+
+  /* Scoreboard sidebar */
+  .scoreboard {
+    width: 180px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+  }
+  .scoreboard h4 {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .score-card {
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
+    cursor: pointer;
+  }
+  .score-card.active-team { border-color: var(--gold) !important; }
+  .score-card .team-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .score-card .team-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    line-height: 1.1;
+    color: var(--gold);
+  }
+  .score-card .team-score.negative { color: var(--red); }
+
+  /* Board */
+  .board-area {
+    flex: 1;
+    padding: 12px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .board-grid {
+    display: grid;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .cat-header {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+    letter-spacing: 0.05em;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .q-cell {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+    min-height: 60px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    user-select: none;
+  }
+  .q-cell:hover:not(.used) { transform: scale(1.03); box-shadow: 0 4px 20px rgba(255,215,0,0.2); background: #22223d; }
+  .q-cell.used {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.1);
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,10,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 700px;
+    width: 100%;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.8);
+    position: relative;
+  }
+
+  .modal-points {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    margin-bottom: 8px;
+  }
+  .modal-question {
+    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 20px;
+    min-height: 80px;
+  }
+
+  .modal-answer {
+    background: rgba(0,230,118,0.1);
+    border: 1px solid rgba(0,230,118,0.3);
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: var(--green);
+    font-size: 1rem;
+    font-weight: 500;
+    display: none;
+    margin-bottom: 16px;
+  }
+  .modal-answer.visible { display: block; }
+
+  /* Timer bar */
+  .timer-bar-wrap {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .timer-bar {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 3px;
+    transition: width 1s linear, background 0.5s;
+    width: 100%;
+  }
+  .timer-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+    text-align: right;
+  }
+
+  /* Modal buttons */
+  .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .m-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.2s;
+  }
+  .m-btn:hover { transform: translateY(-1px); }
+  .m-btn-reveal { background: rgba(255,215,0,0.15); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
+  .m-btn-correct { background: rgba(0,230,118,0.2); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .m-btn-wrong { background: rgba(255,23,68,0.15); color: var(--red); border: 1px solid rgba(255,23,68,0.3); }
+  .m-btn-pass { background: rgba(255,255,255,0.08); color: var(--muted); border: 1px solid rgba(255,255,255,0.15); }
+  .m-btn-close { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid rgba(255,255,255,0.1); margin-left: auto; }
+
+  .modal-team-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal-team-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ─── ADMIN PANEL ─── */
+  #admin {
+    flex-direction: row;
+    height: 100vh;
+  }
+
+  .admin-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+  }
+  .admin-sidebar h3 {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .admin-cat-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .admin-cat-btn.active { background: rgba(255,215,0,0.12); border-color: rgba(255,215,0,0.4); color: var(--gold); }
+  .admin-cat-btn:hover { background: rgba(255,255,255,0.08); }
+  .admin-del-cat {
+    background: none; border: none; color: var(--red);
+    cursor: pointer; font-size: 0.8rem; padding: 0 2px;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .admin-cat-btn:hover .admin-del-cat { opacity: 1; }
+
+  .admin-sidebar-actions { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+  .admin-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+
+  .admin-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .admin-top h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+  }
+
+  .admin-search {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    width: 200px;
+  }
+  .admin-search:focus { border-color: var(--gold); }
+
+  .admin-cat-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .admin-cat-title-row input {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+    outline: none;
+    flex: 1;
+  }
+  .admin-cat-title-row input:focus { border-color: var(--gold); }
+
+  .q-editor-list { display: flex; flex-direction: column; gap: 10px; }
+  .q-editor-row {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 90px 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+  }
+  .q-editor-row select {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px;
+    color: var(--gold);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    outline: none;
+    width: 100%;
+  }
+  .q-editor-row select option { background: #1a1a35; }
+  .q-editor-row input {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    width: 100%;
+  }
+  .q-editor-row input:focus { border-color: var(--gold); }
+  .q-editor-row .del-q {
+    background: none; border: none; color: var(--red);
+    cursor: pointer; font-size: 1rem; padding: 4px 6px;
+    opacity: 0.5; transition: opacity 0.2s;
+  }
+  .q-editor-row .del-q:hover { opacity: 1; }
+
+  .add-q-btn {
+    margin-top: 8px;
+    background: none;
+    border: 1px dashed rgba(255,215,0,0.3);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    padding: 10px;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .add-q-btn:hover { background: rgba(255,215,0,0.05); }
+
+  /* ─── CONFETTI CANVAS ─── */
+  #confetti-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ─── UTILS ─── */
+  .hidden { display: none !important; }
+  .flex { display: flex; }
+  .gap-2 { gap: 8px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.2); border-radius: 3px; }
+
+  /* responsive game header actions */
+  .header-actions { display: flex; gap: 8px; }
+  .hdr-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .hdr-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+  .hdr-btn.gold { color: var(--gold); border-color: rgba(255,215,0,0.3); }
+
+  .no-cats-msg {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  /* ─── UNDO TOAST ─── */
+  #undo-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1e1e3a;
+    border: 1px solid rgba(255,215,0,0.35);
+    border-radius: 14px;
+    padding: 12px 16px 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    z-index: 200;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+    min-width: 280px;
+    max-width: 420px;
+  }
+  #undo-toast.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+  #undo-toast .undo-icon { font-size: 1.2rem; flex-shrink: 0; }
+  #undo-toast .undo-desc { flex: 1; font-size: 0.85rem; color: var(--text); line-height: 1.3; }
+  #undo-toast .undo-desc strong { color: var(--gold); }
+  #undo-toast .undo-timer-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: var(--gold);
+    border-radius: 0 0 14px 14px;
+    transition: width 0.1s linear;
+  }
+  .btn-undo {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .btn-undo:hover { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ═══════════ LOBBY ═══════════ -->
+<div id="lobby" class="screen active">
+  <div class="lobby-header">
+    <div class="lobby-eyebrow">Meetly Presents</div>
+    <div class="lobby-title">JEOPARDY!</div>
+    <div class="lobby-sub">Meetly Game Night &nbsp;·&nbsp; Game Setup</div>
+  </div>
+
+  <div class="lobby-body">
+    <!-- Teams panel -->
+    <div class="lobby-panel">
+      <h3>Teams</h3>
+      <div class="teams-grid" id="teams-grid"></div>
+      <button class="add-team-btn" onclick="addTeam()">+ Add Team</button>
+    </div>
+
+    <!-- Settings panel -->
+    <div class="lobby-panel">
+      <h3>Settings</h3>
+      <div class="settings-grid">
+        <div class="setting-row">
+          <label>Number of Categories</label>
+          <select id="cat-count">
+            <option value="3">3 Categories</option>
+            <option value="4" selected>4 Categories</option>
+            <option value="5">5 Categories</option>
+            <option value="6">6 Categories</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Timer per Question</label>
+          <select id="timer-setting">
+            <option value="0">Off</option>
+            <option value="30">30 seconds</option>
+            <option value="60" selected>60 seconds</option>
+            <option value="120">2 minutes</option>
+            <option value="180">3 minutes</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lobby-actions">
+    <button class="btn-ghost" onclick="showAdmin()">⚙️ Manage Questions</button>
+    <button class="btn-gold" onclick="startGame()">▶ Start Game</button>
+  </div>
+</div>
+
+<!-- ═══════════ GAME ═══════════ -->
+<div id="game" class="screen">
+  <div class="game-header">
+    <div>
+      <div class="game-logo">
+        JEOPARDY!
+        <span>Meetly Game Night</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="hdr-btn gold" onclick="showAdmin()">⚙ Questions</button>
+      <button class="hdr-btn" onclick="resetGame()">↩ Lobby</button>
+    </div>
+  </div>
+
+  <div class="game-main">
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="board-area">
+      <div class="board-grid" id="board-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ADMIN ═══════════ -->
+<div id="admin" class="screen">
+  <div class="admin-sidebar">
+    <h3>Categories</h3>
+    <div id="admin-cat-list"></div>
+    <div class="admin-sidebar-actions">
+      <button class="add-team-btn" onclick="adminAddCat()">+ New Category</button>
+      <button class="btn-ghost" style="font-size:0.8rem;padding:8px" onclick="backFromAdmin()">← Back</button>
+    </div>
+  </div>
+  <div class="admin-main">
+    <div class="admin-top">
+      <h2 id="admin-title">Select a Category</h2>
+      <input class="admin-search" placeholder="🔍 Search questions…" oninput="adminSearch(this.value)" id="admin-search">
+    </div>
+    <div id="admin-editor"></div>
+  </div>
+</div>
+
+<!-- ═══════════ QUESTION MODAL ═══════════ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-points" id="modal-points">100 POINTS</div>
+    <div class="modal-team-label" id="modal-team-label"></div>
+    <div class="timer-bar-wrap" id="timer-wrap">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+    <div class="timer-label" id="timer-label"></div>
+    <div class="modal-question" id="modal-question"></div>
+    <div class="modal-answer" id="modal-answer"></div>
+    <div class="modal-actions">
+      <button class="m-btn m-btn-reveal" id="btn-reveal" onclick="revealAnswer()">👁 Reveal Answer</button>
+      <button class="m-btn m-btn-correct hidden" id="btn-correct" onclick="markResult(true)">✅ Correct</button>
+      <button class="m-btn m-btn-wrong hidden" id="btn-wrong" onclick="markResult(false)">❌ Wrong</button>
+      <button class="m-btn m-btn-pass hidden" id="btn-pass" onclick="passQuestion()">➡️ Pass</button>
+      <button class="m-btn m-btn-close" onclick="closeModal()">✕ Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ UNDO TOAST ═══════════ -->
+<div id="undo-toast">
+  <span class="undo-icon">↩️</span>
+  <div class="undo-desc" id="undo-desc">Last action</div>
+  <button class="btn-undo" onclick="undoLastAction()">Undo</button>
+  <div class="undo-timer-bar" id="undo-timer-bar"></div>
+</div>
+
+<script>
+// ─── CONSTANTS ───
+const TEAM_COLORS = ['#4FC3F7','#F06292','#81C784','#FFB74D','#CE93D8','#80CBC4','#FFF176','#FF8A65'];
+const POINT_VALUES = [100,200,300,400,500];
+
+// ─── STATE ───
+let state = {
+  teams: [],
+  categories: [],
+  used: {},          // "catIdx_ptIdx" -> true
+  activeTeamIdx: 0,
+  catCount: 4,
+  timerSec: 60,
+  adminCatIdx: 0,
+  pendingDelete: {},  // catIdx -> true (for double-click confirm)
+  modal: null,        // {catIdx, ptIdx, passedTeams:[]}
+};
+
+let timerInterval = null;
+let timerRemaining = 0;
+let audioCtx = null;
+let lastAction = null;   // { teamIdx, pts, correct, catKey }
+let undoTimeout = null;
+let undoBarInterval = null;
+const UNDO_DURATION = 8000; // ms
+
+// ─── PERSISTENCE ───
+function save() {
+  localStorage.setItem('mnj_cats', JSON.stringify(state.categories));
+  localStorage.setItem('mnj_teams', JSON.stringify(state.teams));
+}
+function load() {
+  try {
+    const cats = localStorage.getItem('mnj_cats');
+    if (cats) state.categories = JSON.parse(cats);
+    const teams = localStorage.getItem('mnj_teams');
+    if (teams) state.teams = JSON.parse(teams);
+  } catch(e){}
+  // defaults
+  if (!state.teams.length) {
+    state.teams = [
+      { name: 'Team Alpha', color: TEAM_COLORS[0], score: 0 },
+      { name: 'Team Beta',  color: TEAM_COLORS[1], score: 0 },
+    ];
+  }
+  if (!state.categories.length) {
+    state.categories = defaultCategories();
+  }
+}
+
+function defaultCategories() {
+  return [
+    { name: 'Geography', questions: [
+      { pts: 100, q: 'What is the capital of France?', a: 'Paris' },
+      { pts: 200, q: 'Which country has the most natural lakes?', a: 'Canada' },
+      { pts: 300, q: 'What is the longest river in the world?', a: 'The Nile' },
+      { pts: 400, q: 'Which mountain range separates Europe from Asia?', a: 'The Ural Mountains' },
+      { pts: 500, q: 'What is the smallest country in the world by area?', a: 'Vatican City' },
+    ]},
+    { name: 'History', questions: [
+      { pts: 100, q: 'In what year did World War II end?', a: '1945' },
+      { pts: 200, q: 'Who was the first President of the United States?', a: 'George Washington' },
+      { pts: 300, q: 'The Berlin Wall fell in which year?', a: '1989' },
+      { pts: 400, q: 'Which ancient wonder was located in Alexandria, Egypt?', a: 'The Lighthouse of Alexandria' },
+      { pts: 500, q: 'In what year did the French Revolution begin?', a: '1789' },
+    ]},
+    { name: 'Pop Culture', questions: [
+      { pts: 100, q: 'Which streaming service produced "Stranger Things"?', a: 'Netflix' },
+      { pts: 200, q: 'What is the best-selling video game of all time?', a: 'Minecraft' },
+      { pts: 300, q: 'Which artist released the album "Renaissance" in 2022?', a: 'Beyoncé' },
+      { pts: 400, q: 'What fictional city does Batman protect?', a: 'Gotham City' },
+      { pts: 500, q: 'In "The Office", what is the name of the paper company?', a: 'Dunder Mifflin' },
+    ]},
+    { name: 'Science', questions: [
+      { pts: 100, q: 'What is the chemical symbol for water?', a: 'H₂O' },
+      { pts: 200, q: 'How many planets are in our solar system?', a: '8' },
+      { pts: 300, q: 'What is the speed of light (approx) in km/s?', a: '~300,000 km/s' },
+      { pts: 400, q: 'What particle has a negative charge in an atom?', a: 'Electron' },
+      { pts: 500, q: 'What is the Schrödinger equation used to describe?', a: 'Quantum states / wave functions' },
+    ]},
+    { name: 'Flags', questions: [
+      { pts: 100, q: 'Which country has a maple leaf on its flag?', a: 'Canada' },
+      { pts: 200, q: 'How many stars are on the flag of the United States?', a: '50' },
+      { pts: 300, q: 'Which country\'s flag features a dragon?', a: 'Bhutan' },
+      { pts: 400, q: 'What are the three colors of the French flag?', a: 'Blue, White, Red' },
+      { pts: 500, q: 'Which country has the only non-rectangular national flag?', a: 'Nepal' },
+    ]},
+    { name: 'Tech', questions: [
+      { pts: 100, q: 'What does "HTTP" stand for?', a: 'HyperText Transfer Protocol' },
+      { pts: 200, q: 'Who founded Apple Inc.?', a: 'Steve Jobs, Steve Wozniak & Ronald Wayne' },
+      { pts: 300, q: 'What programming language was originally called "Oak"?', a: 'Java' },
+      { pts: 400, q: 'What year was the first iPhone released?', a: '2007' },
+      { pts: 500, q: 'What does "GPU" stand for?', a: 'Graphics Processing Unit' },
+    ]},
+  ];
+}
+
+// ─── AUDIO ───
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playChaChingSound() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    [523,659,784,1047].forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = f;
+      osc.type = 'triangle';
+      gain.gain.setValueAtTime(0, now + i*0.08);
+      gain.gain.linearRampToValueAtTime(0.25, now + i*0.08 + 0.02);
+      gain.gain.linearRampToValueAtTime(0, now + i*0.08 + 0.18);
+      osc.start(now + i*0.08);
+      osc.stop(now + i*0.08 + 0.2);
+    });
+  } catch(e){}
+}
+
+function playWrongSound() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    [400,350,300,250].forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = f;
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.15, now + i*0.12);
+      gain.gain.linearRampToValueAtTime(0, now + i*0.12 + 0.1);
+      osc.start(now + i*0.12);
+      osc.stop(now + i*0.12 + 0.12);
+    });
+  } catch(e){}
+}
+
+function playHeartbeat(urgency) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 60 + urgency * 40;
+    osc.type = 'sine';
+    const now = ctx.currentTime;
+    gain.gain.setValueAtTime(urgency * 0.3, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.08);
+    osc.start(now); osc.stop(now + 0.1);
+  } catch(e){}
+}
+
+// ─── CONFETTI ───
+const canvas = document.getElementById('confetti-canvas');
+const cctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function spawnConfetti(correct) {
+  const emojis = correct ? ['💰','✨','🎉','⭐','💛'] : ['💸','😬','😅','🫤'];
+  for (let i = 0; i < 30; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: correct ? canvas.height + 20 : -20,
+      vx: (Math.random() - 0.5) * 4,
+      vy: correct ? -(4 + Math.random() * 6) : (3 + Math.random() * 5),
+      emoji: emojis[Math.floor(Math.random() * emojis.length)],
+      alpha: 1,
+      size: 20 + Math.random() * 16,
+      life: 1,
+    });
+  }
+}
+
+function animateConfetti() {
+  cctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles = particles.filter(p => p.alpha > 0.05);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.15;
+    p.life -= 0.012;
+    p.alpha = Math.max(0, p.life);
+    cctx.globalAlpha = p.alpha;
+    cctx.font = `${p.size}px serif`;
+    cctx.fillText(p.emoji, p.x, p.y);
+  });
+  cctx.globalAlpha = 1;
+  if (particles.length) requestAnimationFrame(animateConfetti);
+}
+
+// ─── LOBBY ───
+function renderLobby() {
+  const grid = document.getElementById('teams-grid');
+  grid.innerHTML = '';
+  state.teams.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'team-row';
+    row.innerHTML = `
+      <div class="team-color-dot" style="background:${t.color}"></div>
+      <input value="${t.name}" oninput="state.teams[${i}].name=this.value;save()" placeholder="Team name…">
+      <button class="del-team" onclick="removeTeam(${i})">✕</button>
+    `;
+    grid.appendChild(row);
+  });
+}
+
+function addTeam() {
+  if (state.teams.length >= 8) return;
+  state.teams.push({ name: `Team ${String.fromCharCode(65+state.teams.length)}`, color: TEAM_COLORS[state.teams.length % TEAM_COLORS.length], score: 0 });
+  save();
+  renderLobby();
+}
+
+function removeTeam(i) {
+  if (state.teams.length <= 2) return;
+  state.teams.splice(i, 1);
+  save();
+  renderLobby();
+}
+
+// ─── GAME ───
+function startGame() {
+  state.catCount = parseInt(document.getElementById('cat-count').value);
+  state.timerSec = parseInt(document.getElementById('timer-setting').value);
+  state.used = {};
+  state.activeTeamIdx = 0;
+  state.teams.forEach(t => t.score = 0);
+  renderGame();
+  showScreen('game');
+}
+
+function resetGame() {
+  stopTimer();
+  closeModal();
+  renderLobby();
+  showScreen('lobby');
+}
+
+function renderGame() {
+  renderScoreboard();
+  renderBoard();
+}
+
+function renderScoreboard() {
+  const sb = document.getElementById('scoreboard');
+  sb.innerHTML = '<h4>Teams</h4>';
+  state.teams.forEach((t, i) => {
+    const card = document.createElement('div');
+    card.className = 'score-card' + (i === state.activeTeamIdx ? ' active-team' : '');
+    card.style.background = t.color + '18';
+    card.style.borderColor = t.color + '44';
+    card.setAttribute('data-team-idx', i);
+    card.innerHTML = `
+      <div class="team-name">${t.name}</div>
+      <div class="team-score ${t.score < 0 ? 'negative' : ''}">${t.score < 0 ? '-' : ''}$${Math.abs(t.score)}</div>
+    `;
+    card.onclick = () => { state.activeTeamIdx = i; renderScoreboard(); };
+    sb.appendChild(card);
+  });
+}
+
+function renderBoard() {
+  const grid = document.getElementById('board-grid');
+  const cats = state.categories.slice(0, state.catCount);
+  grid.style.gridTemplateColumns = `repeat(${cats.length}, 1fr)`;
+  grid.style.gridTemplateRows = `auto repeat(5, 1fr)`;
+  grid.innerHTML = '';
+
+  cats.forEach(cat => {
+    const h = document.createElement('div');
+    h.className = 'cat-header';
+    h.textContent = cat.name;
+    grid.appendChild(h);
+  });
+
+  POINT_VALUES.forEach((pts, ptIdx) => {
+    cats.forEach((cat, catIdx) => {
+      const key = `${catIdx}_${ptIdx}`;
+      const cell = document.createElement('div');
+      cell.className = 'q-cell' + (state.used[key] ? ' used' : '');
+      cell.textContent = state.used[key] ? '' : `$${pts}`;
+      if (!state.used[key]) {
+        cell.onclick = () => openModal(catIdx, ptIdx);
+      }
+      grid.appendChild(cell);
+    });
+  });
+}
+
+// ─── MODAL ───
+function openModal(catIdx, ptIdx) {
+  const cat = state.categories[catIdx];
+  const q = cat.questions.find(q => q.pts === POINT_VALUES[ptIdx]);
+  if (!q) return;
+  state.modal = { catIdx, ptIdx, passedTeams: [] };
+
+  document.getElementById('modal-points').textContent = `$${q.pts} · ${cat.name}`;
+  document.getElementById('modal-question').textContent = q.q;
+  document.getElementById('modal-answer').textContent = `Answer: ${q.a}`;
+  document.getElementById('modal-answer').classList.remove('visible');
+
+  updateModalTeamLabel();
+
+  // Timer
+  const timerWrap = document.getElementById('timer-wrap');
+  const timerLabel = document.getElementById('timer-label');
+  if (state.timerSec > 0) {
+    timerWrap.style.display = 'block';
+    timerLabel.style.display = 'block';
+    startTimer(state.timerSec);
+  } else {
+    timerWrap.style.display = 'none';
+    timerLabel.style.display = 'none';
+  }
+
+  document.getElementById('btn-reveal').classList.remove('hidden');
+  document.getElementById('btn-correct').classList.add('hidden');
+  document.getElementById('btn-wrong').classList.add('hidden');
+  document.getElementById('btn-pass').classList.add('hidden');
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function updateModalTeamLabel() {
+  const t = state.teams[state.activeTeamIdx];
+  const label = document.getElementById('modal-team-label');
+  label.innerHTML = `<span class="modal-team-dot" style="background:${t.color}"></span> ${t.name}'s turn`;
+}
+
+function revealAnswer() {
+  document.getElementById('modal-answer').classList.add('visible');
+  document.getElementById('btn-reveal').classList.add('hidden');
+  document.getElementById('btn-correct').classList.remove('hidden');
+  document.getElementById('btn-wrong').classList.remove('hidden');
+
+  // Show pass if other teams haven't all passed
+  const allPassed = state.modal.passedTeams.length >= state.teams.length - 1;
+  if (!allPassed) {
+    document.getElementById('btn-pass').classList.remove('hidden');
+  }
+}
+
+function markResult(correct) {
+  stopTimer();
+  const pts = POINT_VALUES[state.modal.ptIdx];
+  const teamIdx = state.activeTeamIdx;
+  const catKey = `${state.modal.catIdx}_${state.modal.ptIdx}`;
+
+  if (correct) {
+    state.teams[teamIdx].score += pts;
+    playChaChingSound();
+    spawnConfetti(true);
+    requestAnimationFrame(animateConfetti);
+  } else {
+    state.teams[teamIdx].score -= pts;
+    playWrongSound();
+    spawnConfetti(false);
+    requestAnimationFrame(animateConfetti);
+  }
+
+  // Save for undo
+  lastAction = { teamIdx, pts, correct, catKey };
+  showUndoToast();
+
+  markUsed();
+  closeModal();
+  renderGame();
+}
+
+function passQuestion() {
+  stopTimer();
+  state.modal.passedTeams.push(state.activeTeamIdx);
+  // move to next team that hasn't passed
+  let next = (state.activeTeamIdx + 1) % state.teams.length;
+  let tries = 0;
+  while (state.modal.passedTeams.includes(next) && tries < state.teams.length) {
+    next = (next + 1) % state.teams.length;
+    tries++;
+  }
+  if (state.modal.passedTeams.length >= state.teams.length) {
+    // Everyone passed — reveal and close
+    document.getElementById('modal-answer').classList.add('visible');
+    document.getElementById('btn-pass').classList.add('hidden');
+    document.getElementById('btn-correct').classList.add('hidden');
+    document.getElementById('btn-wrong').classList.add('hidden');
+    document.getElementById('modal-team-label').innerHTML = '😬 No one got it!';
+    markUsed();
+    renderGame();
+  } else {
+    state.activeTeamIdx = next;
+    updateModalTeamLabel();
+    if (state.timerSec > 0) startTimer(state.timerSec);
+    renderScoreboard();
+    // Check if only one team left — hide pass
+    if (state.modal.passedTeams.length >= state.teams.length - 1) {
+      document.getElementById('btn-pass').classList.add('hidden');
+    }
+  }
+}
+
+function markUsed() {
+  const key = `${state.modal.catIdx}_${state.modal.ptIdx}`;
+  state.used[key] = true;
+}
+
+function closeModal() {
+  stopTimer();
+  document.getElementById('modal-overlay').classList.remove('open');
+  state.modal = null;
+}
+
+// ─── UNDO ───
+function showUndoToast() {
+  if (!lastAction) return;
+  const t = state.teams[lastAction.teamIdx];
+  const sign = lastAction.correct ? '+' : '-';
+  const icon = lastAction.correct ? '✅' : '❌';
+  document.getElementById('undo-icon') && (document.getElementById('undo-icon').textContent = icon);
+  document.getElementById('undo-desc').innerHTML =
+    `${icon} <strong>${t.name}</strong> — ${sign}$${lastAction.pts} &nbsp;<span style="color:var(--muted);font-size:0.78rem">Wrong call?</span>`;
+
+  const toast = document.getElementById('undo-toast');
+  toast.classList.add('visible');
+
+  // Progress bar
+  clearUndoTimers();
+  let elapsed = 0;
+  const bar = document.getElementById('undo-timer-bar');
+  bar.style.width = '100%';
+  undoBarInterval = setInterval(() => {
+    elapsed += 100;
+    bar.style.width = Math.max(0, 100 - (elapsed / UNDO_DURATION * 100)) + '%';
+    if (elapsed >= UNDO_DURATION) clearUndoTimers();
+  }, 100);
+
+  undoTimeout = setTimeout(() => {
+    hideUndoToast();
+  }, UNDO_DURATION);
+}
+
+function hideUndoToast() {
+  document.getElementById('undo-toast').classList.remove('visible');
+  clearUndoTimers();
+  lastAction = null;
+}
+
+function clearUndoTimers() {
+  if (undoTimeout) { clearTimeout(undoTimeout); undoTimeout = null; }
+  if (undoBarInterval) { clearInterval(undoBarInterval); undoBarInterval = null; }
+}
+
+function undoLastAction() {
+  if (!lastAction) return;
+  const { teamIdx, pts, correct, catKey } = lastAction;
+
+  // Reverse the score
+  if (correct) {
+    state.teams[teamIdx].score -= pts;
+  } else {
+    state.teams[teamIdx].score += pts;
+  }
+
+  // Un-mark the question so it can be played again
+  delete state.used[catKey];
+
+  hideUndoToast();
+  renderGame();
+
+  // Brief flash on the scoreboard card
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.score-card');
+    if (cards[teamIdx]) {
+      cards[teamIdx].style.outline = '2px solid var(--gold)';
+      setTimeout(() => { cards[teamIdx].style.outline = ''; }, 800);
+    }
+  }, 50);
+}
+
+// ─── TIMER ───
+function startTimer(seconds) {
+  stopTimer();
+  timerRemaining = seconds;
+  const bar = document.getElementById('timer-bar');
+  const label = document.getElementById('timer-label');
+  bar.style.width = '100%';
+  bar.style.background = 'var(--gold)';
+
+  let heartbeatInterval = null;
+
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    const pct = timerRemaining / seconds;
+    bar.style.width = (pct * 100) + '%';
+    label.textContent = timerRemaining + 's remaining';
+
+    if (pct < 0.3) bar.style.background = 'var(--red)';
+    else if (pct < 0.6) bar.style.background = '#ff9800';
+    else bar.style.background = 'var(--gold)';
+
+    // Heartbeat: faster as time runs out
+    const urgency = 1 - pct;
+    if (timerRemaining % Math.max(1, Math.floor(3 * pct)) === 0) {
+      playHeartbeat(urgency);
+    }
+
+    if (timerRemaining <= 0) {
+      stopTimer();
+      bar.style.width = '0%';
+      label.textContent = "Time's up!";
+      playWrongSound();
+      // Auto-reveal
+      if (!document.getElementById('modal-answer').classList.contains('visible')) {
+        revealAnswer();
+      }
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+// ─── ADMIN ───
+let adminSearchQuery = '';
+
+function showAdmin() {
+  state.adminCatIdx = 0;
+  adminSearchQuery = '';
+  document.getElementById('admin-search').value = '';
+  renderAdminCatList();
+  renderAdminEditor();
+  showScreen('admin');
+}
+
+function backFromAdmin() {
+  save();
+  renderBoard();
+  // Go back to wherever we came from
+  const prevScreen = document.querySelector('.screen.active');
+  if (prevScreen && prevScreen.id !== 'admin') return;
+  showScreen(document.getElementById('game').style.display !== 'none' ? 'game' : 'lobby');
+  // Simple: just go to lobby
+  showScreen('lobby');
+  renderLobby();
+}
+
+function renderAdminCatList() {
+  const list = document.getElementById('admin-cat-list');
+  list.innerHTML = '';
+  state.categories.forEach((cat, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'admin-cat-btn' + (i === state.adminCatIdx ? ' active' : '');
+    btn.innerHTML = `<span>${cat.name}</span><button class="admin-del-cat" onclick="adminDelCat(event,${i})">✕</button>`;
+    btn.onclick = (e) => { if (e.target.classList.contains('admin-del-cat')) return; state.adminCatIdx = i; renderAdminCatList(); renderAdminEditor(); };
+    list.appendChild(btn);
+  });
+}
+
+function adminAddCat() {
+  state.categories.push({ name: 'New Category', questions: POINT_VALUES.map(p => ({ pts: p, q: '', a: '' })) });
+  state.adminCatIdx = state.categories.length - 1;
+  save();
+  renderAdminCatList();
+  renderAdminEditor();
+}
+
+function adminDelCat(e, i) {
+  e.stopPropagation();
+  if (state.pendingDelete[i]) {
+    state.categories.splice(i, 1);
+    if (state.adminCatIdx >= state.categories.length) state.adminCatIdx = Math.max(0, state.categories.length - 1);
+    delete state.pendingDelete[i];
+    save();
+    renderAdminCatList();
+    renderAdminEditor();
+  } else {
+    state.pendingDelete[i] = true;
+    e.target.textContent = '?';
+    e.target.style.opacity = '1';
+    setTimeout(() => { delete state.pendingDelete[i]; e.target.textContent = '✕'; e.target.style.opacity = ''; }, 2000);
+  }
+}
+
+function renderAdminEditor() {
+  const editor = document.getElementById('admin-editor');
+  const title = document.getElementById('admin-title');
+  if (!state.categories.length) {
+    title.textContent = 'No Categories';
+    editor.innerHTML = '<div class="no-cats-msg">Create a category in the sidebar to get started.</div>';
+    return;
+  }
+  const cat = state.categories[state.adminCatIdx];
+  title.textContent = cat.name;
+
+  let qs = cat.questions.filter(q => {
+    if (!adminSearchQuery) return true;
+    return q.q.toLowerCase().includes(adminSearchQuery) || q.a.toLowerCase().includes(adminSearchQuery);
+  });
+
+  editor.innerHTML = `
+    <div class="admin-cat-title-row">
+      <input value="${cat.name}" oninput="state.categories[${state.adminCatIdx}].name=this.value;document.getElementById('admin-title').textContent=this.value;renderAdminCatList();save()" placeholder="Category name">
+    </div>
+    <div class="q-editor-list" id="q-editor-list"></div>
+    <button class="add-q-btn" onclick="adminAddQ()">+ Add Question</button>
+  `;
+
+  const list = document.getElementById('q-editor-list');
+  cat.questions.forEach((q, qi) => {
+    if (adminSearchQuery && !q.q.toLowerCase().includes(adminSearchQuery) && !q.a.toLowerCase().includes(adminSearchQuery)) return;
+    const row = document.createElement('div');
+    row.className = 'q-editor-row';
+    const ptOptions = POINT_VALUES.map(p => `<option value="${p}" ${q.pts===p?'selected':''}>${p}</option>`).join('');
+    row.innerHTML = `
+      <select onchange="state.categories[${state.adminCatIdx}].questions[${qi}].pts=parseInt(this.value);save()">${ptOptions}</select>
+      <input value="${q.q}" placeholder="Question…" oninput="state.categories[${state.adminCatIdx}].questions[${qi}].q=this.value;save()">
+      <input value="${q.a}" placeholder="Answer…" oninput="state.categories[${state.adminCatIdx}].questions[${qi}].a=this.value;save()">
+      <button class="del-q" onclick="adminDelQ(${qi})">🗑</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function adminAddQ() {
+  state.categories[state.adminCatIdx].questions.push({ pts: 100, q: '', a: '' });
+  save();
+  renderAdminEditor();
+}
+
+function adminDelQ(qi) {
+  state.categories[state.adminCatIdx].questions.splice(qi, 1);
+  save();
+  renderAdminEditor();
+}
+
+function adminSearch(val) {
+  adminSearchQuery = val.toLowerCase();
+  renderAdminEditor();
+}
+
+// ─── SCREEN MANAGEMENT ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── INIT ───
+load();
+renderLobby();
+</script>
+</body>
+</html>
